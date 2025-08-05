@@ -1,5 +1,24 @@
 # Phone Lookup RS
 
+<div align="center">
+
+<img src="assets/logo.svg" alt="Phone Lookup RS Logo" width="200" height="200">
+
+<br><br>
+
+[![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg?style=flat-square&logo=rust)](https://www.rust-lang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![GitHub release](https://img.shields.io/github/release/wangnov/phone-lookup-rs.svg?style=flat-square)](https://github.com/wangnov/phone-lookup-rs/releases)
+[![GitHub stars](https://img.shields.io/github/stars/wangnov/phone-lookup-rs.svg?style=flat-square)](https://github.com/wangnov/phone-lookup-rs/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/wangnov/phone-lookup-rs.svg?style=flat-square)](https://github.com/wangnov/phone-lookup-rs/network)
+[![GitHub issues](https://img.shields.io/github/issues/wangnov/phone-lookup-rs.svg?style=flat-square)](https://github.com/wangnov/phone-lookup-rs/issues)
+[![Actix Web](https://img.shields.io/badge/Actix%20Web-4.11.0-blue.svg?style=flat-square)](https://actix.rs/)
+[![Performance](https://img.shields.io/badge/Performance-<1ms-brightgreen.svg?style=flat-square)](#-性能指标)
+
+</div>
+
+---
+
 🚀 高性能手机号归属地查询服务，基于 Rust 实现，使用优化的二分查找算法和智能缓存机制。
 
 ## ✨ 特性

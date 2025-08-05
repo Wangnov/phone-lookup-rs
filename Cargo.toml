@@ -10,6 +10,7 @@ license = "MIT"
 repository = "https://github.com/wangnov/phone-lookup-rs"
 homepage = "https://github.com/wangnov/phone-lookup-rs"
 readme = "README.md"
+documentation = "https://github.com/wangnov/phone-lookup-rs"
 
 [dependencies]
 actix-web = "4.11.0"
