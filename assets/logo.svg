@@ -1,172 +1,285 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- 渐变定义 -->
-    <linearGradient id="rustGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#CE422B;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#FF6B35;stop-opacity:1" />
+    <!-- 深空蓝渐变 -->
+    <radialGradient id="spaceGradient" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" style="stop-color:#0A2463;stop-opacity:1" />
+      <stop offset="40%" style="stop-color:#011638;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000814;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- 霓虹橙渐变 -->
+    <linearGradient id="neonOrange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFB700;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FF6B35;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F03A47;stop-opacity:1" />
     </linearGradient>
     
-    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1E3A5F;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#2E5984;stop-opacity:1" />
+    <!-- 全息效果渐变 -->
+    <linearGradient id="holographic" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00F5FF;stop-opacity:0.8" />
+      <stop offset="25%" style="stop-color:#B388FF;stop-opacity:0.8" />
+      <stop offset="50%" style="stop-color:#FF4081;stop-opacity:0.8" />
+      <stop offset="75%" style="stop-color:#00E5FF;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#00F5FF;stop-opacity:0.8" />
     </linearGradient>
     
-    <linearGradient id="phoneGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#F8F9FA;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#E9ECEF;stop-opacity:1" />
-    </linearGradient>
-    
-    <!-- 发光效果 -->
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-      <feMerge> 
+    <!-- 霓虹发光 -->
+    <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feColorMatrix in="coloredBlur" type="matrix" values="1 0 0 0 0.9  0 1 0 0 0.4  0 0 1 0 0  0 0 0 1 0"/>
+      <feMerge>
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
     
-    <!-- 阴影效果 -->
-    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.3)"/>
+    <!-- 数字雨效果 -->
+    <filter id="digitalGlow">
+      <feGaussianBlur stdDeviation="2"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0  0 1 0 0 0.8  0 0 1 0 1  0 0 0 1 0"/>
     </filter>
+    
+    <!-- 圆形裁剪 -->
+    <clipPath id="circleClip">
+      <circle cx="256" cy="256" r="245"/>
+    </clipPath>
+    
+    <!-- 扫描线纹理 -->
+    <pattern id="scanlines" x="0" y="0" width="100%" height="4" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="100%" height="2" fill="rgba(0,245,255,0.1)"/>
+    </pattern>
   </defs>
   
-  <!-- 背景圆形 -->
-  <circle cx="256" cy="256" r="240" fill="url(#blueGradient)" filter="url(#shadow)">
-    <animate attributeName="r" values="240;245;240" dur="3s" repeatCount="indefinite"/>
+  <!-- 主圆形背景 -->
+  <circle cx="256" cy="256" r="256" fill="url(#spaceGradient)"/>
+  
+  <!-- 外环装饰 -->
+  <circle cx="256" cy="256" r="250" fill="none" stroke="url(#holographic)" stroke-width="1" opacity="0.8">
+    <animate attributeName="stroke-dasharray" values="0 1570;785 785;0 1570" dur="4s" repeatCount="indefinite"/>
   </circle>
   
-  <!-- 外层科技圆环 -->
-  <circle cx="256" cy="256" r="200" fill="none" stroke="#CE422B" stroke-width="2" opacity="0.6">
-    <animate attributeName="stroke-dasharray" values="0 1256;628 628;0 1256" dur="4s" repeatCount="indefinite"/>
-    <animateTransform attributeName="transform" type="rotate" values="0 256 256;360 256 256" dur="8s" repeatCount="indefinite"/>
-  </circle>
+  <!-- 内容区域 -->
+  <g clip-path="url(#circleClip)">
+    <!-- 科技网格背景 -->
+    <g opacity="0.2">
+      <defs>
+        <pattern id="hexGrid" width="60" height="52" patternUnits="userSpaceOnUse">
+          <polygon points="30,0 60,15 60,37 30,52 0,37 0,15" fill="none" stroke="#00F5FF" stroke-width="0.5"/>
+        </pattern>
+      </defs>
+      <rect width="512" height="512" fill="url(#hexGrid)"/>
+    </g>
+    
+    <!-- 扫描线效果 -->
+    <rect width="512" height="512" fill="url(#scanlines)" opacity="0.3"/>
+    
+    <!-- 数字雨背景 -->
+    <g opacity="0.3" filter="url(#digitalGlow)">
+      <text x="80" y="100" font-family="monospace" font-size="12" fill="#00F5FF" transform="rotate(-15 80 100)">
+        <tspan>01001000</tspan>
+        <animate attributeName="y" values="100;520;100" dur="8s" repeatCount="indefinite"/>
+      </text>
+      <text x="200" y="150" font-family="monospace" font-size="10" fill="#00F5FF" transform="rotate(-15 200 150)">
+        <tspan>11010110</tspan>
+        <animate attributeName="y" values="150;570;150" dur="10s" repeatCount="indefinite"/>
+      </text>
+      <text x="350" y="80" font-family="monospace" font-size="14" fill="#00F5FF" transform="rotate(-15 350 80)">
+        <tspan>10110011</tspan>
+        <animate attributeName="y" values="80;500;80" dur="9s" repeatCount="indefinite"/>
+      </text>
+      <text x="420" y="200" font-family="monospace" font-size="11" fill="#00F5FF" transform="rotate(-15 420 200)">
+        <tspan>00111010</tspan>
+        <animate attributeName="y" values="200;620;200" dur="7s" repeatCount="indefinite"/>
+      </text>
+    </g>
+    
+    <!-- 动态电路线 -->
+    <g opacity="0.5">
+      <path d="M 100 256 L 200 256 L 200 180 L 300 180" fill="none" stroke="#00F5FF" stroke-width="2">
+        <animate attributeName="stroke-dasharray" values="0 400;200 200;0 400" dur="3s" repeatCount="indefinite"/>
+      </path>
+      <circle cx="200" cy="256" r="3" fill="#00F5FF">
+        <animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="200" cy="180" r="3" fill="#00F5FF">
+        <animate attributeName="opacity" values="0;1;0" dur="3s" begin="0.5s" repeatCount="indefinite"/>
+      </circle>
+      
+      <path d="M 412 256 L 312 256 L 312 332 L 212 332" fill="none" stroke="#FF6B35" stroke-width="2">
+        <animate attributeName="stroke-dasharray" values="0 400;200 200;0 400" dur="3s" begin="1s" repeatCount="indefinite"/>
+      </path>
+    </g>
+  </g>
   
-  <!-- iPhone轮廓 -->
-  <g transform="translate(206, 156)">
-    <!-- iPhone外壳 -->
-    <rect x="0" y="0" width="100" height="200" rx="25" ry="25" fill="url(#phoneGradient)" stroke="#1E3A5F" stroke-width="3" filter="url(#shadow)"/>
+  <!-- 中央手机（未来感设计） -->
+  <g transform="translate(256, 200)">
+    <!-- 手机光晕 -->
+    <ellipse cx="0" cy="0" rx="80" ry="120" fill="none" stroke="url(#holographic)" stroke-width="0.5" opacity="0.3">
+      <animate attributeName="stroke-width" values="0.5;2;0.5" dur="3s" repeatCount="indefinite"/>
+    </ellipse>
+    
+    <!-- 手机主体 -->
+    <rect x="-45" y="-70" width="90" height="140" rx="15" ry="15" fill="rgba(0,245,255,0.05)" stroke="#00F5FF" stroke-width="2"/>
     
     <!-- 屏幕 -->
-    <rect x="8" y="20" width="84" height="160" rx="15" ry="15" fill="#000000"/>
+    <rect x="-40" y="-65" width="80" height="130" rx="10" ry="10" fill="#000814" stroke="#00F5FF" stroke-width="1"/>
     
-    <!-- 屏幕内容 - 查询界面 -->
-    <rect x="12" y="30" width="76" height="8" rx="4" fill="#CE422B" opacity="0.8">
-      <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite"/>
-    </rect>
-    
-    <!-- 查询结果线条 -->
-    <rect x="16" y="45" width="60" height="3" fill="#4CAF50" opacity="0.7"/>
-    <rect x="16" y="52" width="50" height="3" fill="#4CAF50" opacity="0.7"/>
-    <rect x="16" y="59" width="55" height="3" fill="#4CAF50" opacity="0.7"/>
-    
-    <!-- 动态数据波纹 -->
-    <g opacity="0.6">
-      <circle cx="50" cy="120" r="3" fill="#CE422B">
-        <animate attributeName="r" values="3;8;3" dur="1.5s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
-      </circle>
-    </g>
-    
-    <!-- Home indicator -->
-    <rect x="40" y="185" width="20" height="3" rx="2" fill="#666"/>
-  </g>
-  
-  <!-- 放大镜 -->
-  <g transform="translate(330, 180)">
-    <circle cx="0" cy="0" r="25" fill="none" stroke="url(#rustGradient)" stroke-width="5" filter="url(#glow)"/>
-    <line x1="20" y1="20" x2="35" y2="35" stroke="url(#rustGradient)" stroke-width="5" stroke-linecap="round" filter="url(#glow)"/>
-    
-    <!-- 搜索动画效果 -->
-    <circle cx="0" cy="0" r="15" fill="none" stroke="#CE422B" stroke-width="2" opacity="0.5">
-      <animate attributeName="r" values="15;25;15" dur="2s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite"/>
-    </circle>
-  </g>
-  
-  <!-- Rust齿轮元素 -->
-  <g transform="translate(180, 320)">
-    <g>
-      <animateTransform attributeName="transform" type="rotate" values="0 0 0;360 0 0" dur="6s" repeatCount="indefinite"/>
-      <!-- 齿轮主体 -->
-      <circle cx="0" cy="0" r="20" fill="url(#rustGradient)"/>
-      <!-- 齿轮齿 -->
-      <g stroke="none" fill="url(#rustGradient)">
-        <rect x="-3" y="-25" width="6" height="10" rx="2"/>
-        <rect x="-3" y="15" width="6" height="10" rx="2"/>
-        <rect x="-25" y="-3" width="10" height="6" rx="2"/>
-        <rect x="15" y="-3" width="10" height="6" rx="2"/>
-        <rect x="-18" y="-18" width="8" height="8" rx="2" transform="rotate(45)"/>
-        <rect x="10" y="-18" width="8" height="8" rx="2" transform="rotate(45)"/>
-        <rect x="-18" y="10" width="8" height="8" rx="2" transform="rotate(45)"/>
-        <rect x="10" y="10" width="8" height="8" rx="2" transform="rotate(45)"/>
+    <!-- 全息界面 -->
+    <g opacity="0.9">
+      <!-- 搜索区域 -->
+      <rect x="-35" y="-55" width="70" height="20" rx="10" fill="none" stroke="url(#neonOrange)" stroke-width="1.5" filter="url(#neonGlow)"/>
+      
+      <!-- 搜索图标 -->
+      <circle cx="25" cy="-45" r="5" fill="none" stroke="#FF6B35" stroke-width="1.5"/>
+      <line x1="29" y1="-41" x2="32" y2="-38" stroke="#FF6B35" stroke-width="1.5"/>
+      
+      <!-- 输入文字 -->
+      <text x="-30" y="-42" font-family="monospace" font-size="8" fill="#00F5FF">1808683...</text>
+      
+      <!-- 扫描线 -->
+      <line x1="-35" y1="-25" x2="35" y2="-25" stroke="url(#holographic)" stroke-width="2" opacity="0.8">
+        <animate attributeName="y1" values="-25;45;-25" dur="2s" repeatCount="indefinite"/>
+        <animate attributeName="y2" values="-25;45;-25" dur="2s" repeatCount="indefinite"/>
+      </line>
+      
+      <!-- 数据可视化 -->
+      <g transform="translate(0, 0)">
+        <!-- 波形图 -->
+        <polyline points="-30,-10 -20,-5 -10,-15 0,-8 10,-12 20,-3 30,-10" 
+                  fill="none" stroke="#00F5FF" stroke-width="1.5" opacity="0.8">
+          <animate attributeName="points" 
+                   values="-30,-10 -20,-5 -10,-15 0,-8 10,-12 20,-3 30,-10;
+                          -30,-5 -20,-12 -10,-8 0,-15 10,-5 20,-10 30,-5;
+                          -30,-10 -20,-5 -10,-15 0,-8 10,-12 20,-3 30,-10" 
+                   dur="1.5s" repeatCount="indefinite"/>
+        </polyline>
+        
+        <!-- 数据点 -->
+        <circle cx="-20" cy="15" r="2" fill="#4CAF50">
+          <animate attributeName="opacity" values="0.3;1;0.3" dur="1s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="0" cy="15" r="2" fill="#4CAF50">
+          <animate attributeName="opacity" values="0.3;1;0.3" dur="1s" begin="0.3s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="20" cy="15" r="2" fill="#4CAF50">
+          <animate attributeName="opacity" values="0.3;1;0.3" dur="1s" begin="0.6s" repeatCount="indefinite"/>
+        </circle>
       </g>
-      <!-- 齿轮中心 -->
-      <circle cx="0" cy="0" r="8" fill="#1E3A5F"/>
+      
+      <!-- 位置信息 -->
+      <g transform="translate(-30, 35)">
+        <circle cx="0" cy="0" r="3" fill="#FF6B35" opacity="0.8"/>
+        <text x="8" y="3" font-family="Arial" font-size="7" fill="#00F5FF">成都市</text>
+      </g>
+      
+      <!-- 运营商标识 -->
+      <rect x="-35" y="48" width="12" height="8" rx="2" fill="url(#neonOrange)" opacity="0.7"/>
+      <text x="-18" y="54" font-family="Arial" font-size="7" fill="#00F5FF">电信</text>
     </g>
   </g>
   
-  <!-- 数据流动效果 -->
-  <g opacity="0.7">
-    <path d="M 306 206 Q 350 230 320 280 Q 290 330 330 360" fill="none" stroke="#CE422B" stroke-width="2" stroke-dasharray="5,5">
-      <animate attributeName="stroke-dashoffset" values="0;-20" dur="1s" repeatCount="indefinite"/>
-    </path>
+  <!-- 3D搜索镜 -->
+  <g transform="translate(340, 260)">
+    <ellipse cx="0" cy="5" rx="35" ry="8" fill="rgba(0,0,0,0.3)"/>
+    <circle cx="0" cy="0" r="30" fill="none" stroke="url(#neonOrange)" stroke-width="4" filter="url(#neonGlow)"/>
+    <circle cx="0" cy="0" r="20" fill="none" stroke="#FF6B35" stroke-width="1" opacity="0.5"/>
+    <line x1="25" y1="25" x2="40" y2="40" stroke="url(#neonOrange)" stroke-width="4" stroke-linecap="round" filter="url(#neonGlow)"/>
     
-    <path d="M 206 356 Q 180 330 220 300 Q 260 270 220 240" fill="none" stroke="#4CAF50" stroke-width="2" stroke-dasharray="3,3">
-      <animate attributeName="stroke-dashoffset" values="0;-15" dur="1.2s" repeatCount="indefinite"/>
-    </path>
-  </g>
-  
-  <!-- Rust "R" 标识 -->
-  <g transform="translate(350, 350)">
-    <circle cx="0" cy="0" r="30" fill="url(#rustGradient)" opacity="0.9"/>
-    <text x="0" y="8" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="32" font-weight="bold" fill="white">R</text>
-    <circle cx="0" cy="0" r="25" fill="none" stroke="white" stroke-width="1" opacity="0.3">
-      <animate attributeName="stroke-dasharray" values="0 157;78.5 78.5;0 157" dur="3s" repeatCount="indefinite"/>
+    <!-- 数据扫描动画 -->
+    <circle cx="0" cy="0" r="15" fill="none" stroke="#FF6B35" stroke-width="1" opacity="0.6">
+      <animate attributeName="r" values="15;30;15" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;0;0.6" dur="2s" repeatCount="indefinite"/>
     </circle>
   </g>
   
-  <!-- 主标题 -->
-  <text x="256" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white">
-    Phone Lookup
-    <animate attributeName="opacity" values="1;0.8;1" dur="3s" repeatCount="indefinite"/>
-  </text>
+  <!-- Rust齿轮（赛博朋克风格） -->
+  <g transform="translate(140, 340)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="0 0 0;-360 0 0" dur="10s" repeatCount="indefinite"/>
+      
+      <!-- 外环 -->
+      <circle cx="0" cy="0" r="30" fill="none" stroke="url(#neonOrange)" stroke-width="2" opacity="0.8"/>
+      
+      <!-- 齿轮主体 -->
+      <circle cx="0" cy="0" r="25" fill="rgba(255,107,53,0.1)" stroke="#FF6B35" stroke-width="1"/>
+      
+      <!-- 科技纹路 -->
+      <g stroke="#FF6B35" stroke-width="1" fill="none" opacity="0.8">
+        <path d="M 0,-25 L 0,-30 M 0,25 L 0,30 M -25,0 L -30,0 M 25,0 L 30,0"/>
+        <path d="M -18,-18 L -21,-21 M 18,-18 L 21,-21 M -18,18 L -21,21 M 18,18 L 21,21"/>
+      </g>
+      
+      <!-- 中心R -->
+      <circle cx="0" cy="0" r="15" fill="#000814" stroke="#FF6B35" stroke-width="1"/>
+      <text x="0" y="6" text-anchor="middle" font-family="Arial Black" font-size="18" font-weight="bold" fill="url(#neonOrange)">R</text>
+    </g>
+  </g>
   
-  <!-- 副标题 -->
-  <text x="256" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#CE422B">
-    RS
-    <animate attributeName="fill" values="#CE422B;#FF6B35;#CE422B" dur="2s" repeatCount="indefinite"/>
-  </text>
+  <!-- 性能HUD -->
+  <g transform="translate(370, 350)">
+    <!-- HUD框架 -->
+    <path d="M -25,-15 L -25,-20 L -20,-25 L 20,-25 L 25,-20 L 25,15 L 20,20 L -20,20 L -25,15 Z" 
+          fill="none" stroke="#00F5FF" stroke-width="1" opacity="0.8"/>
+    
+    <!-- 速度显示 -->
+    <text x="0" y="-8" text-anchor="middle" font-family="monospace" font-size="8" fill="#00F5FF">SPEED</text>
+    
+    <!-- 数值 -->
+    <text x="0" y="5" text-anchor="middle" font-family="monospace" font-size="12" font-weight="bold" fill="#4CAF50">
+      &lt;1ms
+      <animate attributeName="fill" values="#4CAF50;#00F5FF;#4CAF50" dur="2s" repeatCount="indefinite"/>
+    </text>
+    
+    <!-- 动态条 -->
+    <rect x="-20" y="10" width="40" height="2" fill="#00F5FF" opacity="0.3"/>
+    <rect x="-20" y="10" width="35" height="2" fill="#4CAF50">
+      <animate attributeName="width" values="35;40;35" dur="1s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+  
+  <!-- 标题（霓虹效果） -->
+  <g transform="translate(256, 90)">
+    <text x="0" y="0" text-anchor="middle" font-family="Arial Black" font-size="36" font-weight="bold" 
+          fill="none" stroke="#00F5FF" stroke-width="1" filter="url(#neonGlow)">
+      PHONE LOOKUP
+    </text>
+    <text x="0" y="30" text-anchor="middle" font-family="Arial Black" font-size="40" font-weight="bold" 
+          fill="url(#neonOrange)" filter="url(#neonGlow)">
+      RS
+    </text>
+  </g>
   
   <!-- 底部标语 -->
-  <text x="256" y="460" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="rgba(255,255,255,0.8)">
-    High Performance API
+  <text x="256" y="430" text-anchor="middle" font-family="Arial" font-size="14" fill="#00F5FF" opacity="0.8">
+    高性能手机号归属地查询API
   </text>
   
-  <!-- 科技感装饰线条 -->
-  <g opacity="0.4">
-    <line x1="100" y1="150" x2="150" y2="150" stroke="#CE422B" stroke-width="2">
-      <animate attributeName="x2" values="150;180;150" dur="2s" repeatCount="indefinite"/>
-    </line>
-    <line x1="362" y1="150" x2="412" y2="150" stroke="#CE422B" stroke-width="2">
-      <animate attributeName="x1" values="362;332;362" dur="2s" repeatCount="indefinite"/>
-    </line>
+  <!-- 角落装饰 -->
+  <g opacity="0.6">
+    <!-- 左上 -->
+    <path d="M 50,50 L 50,70 M 50,50 L 70,50" stroke="#00F5FF" stroke-width="2"/>
+    <!-- 右上 -->
+    <path d="M 462,50 L 462,70 M 462,50 L 442,50" stroke="#00F5FF" stroke-width="2"/>
+    <!-- 左下 -->
+    <path d="M 50,462 L 50,442 M 50,462 L 70,462" stroke="#FF6B35" stroke-width="2"/>
+    <!-- 右下 -->
+    <path d="M 462,462 L 462,442 M 462,462 L 442,462" stroke="#FF6B35" stroke-width="2"/>
   </g>
   
-  <!-- 数据点动画 -->
+  <!-- 浮动粒子 -->
   <g>
-    <circle cx="140" cy="200" r="2" fill="#4CAF50">
-      <animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite" begin="0s"/>
+    <circle cx="100" cy="200" r="1" fill="#00F5FF">
+      <animate attributeName="cy" values="200;180;200" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.2;1;0.2" dur="3s" repeatCount="indefinite"/>
     </circle>
-    <circle cx="160" cy="220" r="2" fill="#4CAF50">
-      <animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite" begin="0.2s"/>
+    <circle cx="400" cy="150" r="1.5" fill="#FF6B35">
+      <animate attributeName="cy" values="150;130;150" dur="2.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="2.5s" repeatCount="indefinite"/>
     </circle>
-    <circle cx="380" cy="280" r="2" fill="#4CAF50">
-      <animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite" begin="0.4s"/>
-    </circle>
-    <circle cx="360" cy="300" r="2" fill="#4CAF50">
-      <animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite" begin="0.6s"/>
+    <circle cx="150" cy="400" r="1" fill="#4CAF50">
+      <animate attributeName="cy" values="400;380;400" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite"/>
     </circle>
   </g>
 </svg>
