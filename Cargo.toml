@@ -1,0 +1,37 @@
+[package]
+name = "phone-lookup-rs"
+version = "0.1.0"
+authors = ["Wangnov <wangnov69@gmail.com>"]
+edition = "2021"
+description = "High-performance phone number lookup service with optimized binary search and caching"
+keywords = ["phone", "api", "lookup", "actix-web", "rust"]
+categories = ["web-programming", "database"]
+license = "MIT"
+repository = "https://github.com/wangnov/phone-lookup-rs"
+homepage = "https://github.com/wangnov/phone-lookup-rs"
+readme = "README.md"
+
+[dependencies]
+actix-web = "4.11.0"
+serde = { version = "1.0.219", features = ["derive"] }
+thiserror = "1.0.69"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
+num_cpus = "1.16.0"
+tokio = { version = "1.46.1", features = ["full"] }
+config = "0.14"
+toml = "0.8"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 1
+debug = true
+
+[profile.test]
+opt-level = 2
