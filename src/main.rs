@@ -1,6 +1,8 @@
 use actix_web::{get, middleware::Logger, post, web, App, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use std::time::Instant;
+use futures::stream::{self, StreamExt};
 
 use phone_lookup_rs::config::Config;
 use phone_lookup_rs::{PhoneData, PhoneNoInfo};
@@ -80,6 +82,50 @@ async fn index() -> impl Responder {
 #[derive(Debug, Deserialize)]
 struct QueryParams {
     phone: String,
+}
+
+/// 批量查询请求结构体
+#[derive(Debug, Deserialize)]
+struct BatchQueryRequest {
+    /// 手机号列表，最多支持100个
+    phones: Vec<String>,
+}
+
+/// 批量查询响应结构体
+#[derive(Debug, Serialize)]
+struct BatchQueryResponse {
+    /// 成功查询的结果
+    results: Vec<PhoneQueryResult>,
+    /// 查询统计信息
+    stats: BatchQueryStats,
+}
+
+/// 单个手机号查询结果
+#[derive(Debug, Serialize)]
+struct PhoneQueryResult {
+    /// 查询的手机号（确保与请求中的号码完全一致）
+    phone: String,
+    /// 在请求数组中的索引位置（从0开始）
+    index: usize,
+    /// 查询是否成功
+    success: bool,
+    /// 查询结果数据（成功时为Some）
+    data: Option<PhoneNoInfo>,
+    /// 错误信息（失败时为Some）
+    error: Option<String>,
+}
+
+/// 批量查询统计信息
+#[derive(Debug, Serialize)]
+struct BatchQueryStats {
+    /// 查询总数
+    total: usize,
+    /// 成功数量
+    success_count: usize,
+    /// 失败数量
+    failed_count: usize,
+    /// 处理时间（毫秒）
+    processing_time_ms: u64,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -200,6 +246,116 @@ async fn demo_endpoint(pa: web::Json<ProvinceQuery>) -> impl Responder {
     )))
 }
 
+/// 批量查询手机号归属地信息
+/// 
+/// 支持同时查询多个手机号，返回每个手机号的查询结果和统计信息
+#[post("/batch-query")]
+async fn batch_query(
+    request: web::Json<BatchQueryRequest>, 
+    data: web::Data<AppState>
+) -> impl Responder {
+    let start_time = Instant::now();
+    let batch_request = request.into_inner();
+    
+    // 输入验证
+    if batch_request.phones.is_empty() {
+        let response: ApiResponse<BatchQueryResponse> = ApiResponse::error("手机号列表不能为空");
+        return HttpResponse::BadRequest().json(response);
+    }
+    
+    if batch_request.phones.len() > 100 {
+        let response: ApiResponse<BatchQueryResponse> = ApiResponse::error("批量查询最多支持100个手机号");
+        return HttpResponse::BadRequest().json(response);
+    }
+    
+    // 检查每个手机号的基本格式
+    for phone in &batch_request.phones {
+        if phone.is_empty() || phone.len() < 7 || phone.len() > 11 {
+            let response: ApiResponse<BatchQueryResponse> = ApiResponse::error("手机号格式无效");
+            return HttpResponse::BadRequest().json(response);
+        }
+    }
+    
+    tracing::info!("开始批量查询 {} 个手机号", batch_request.phones.len());
+    
+    // 使用 futures::stream 进行优化的并发查询，自动保证结果顺序
+    let phone_data = data.phone_data.clone();
+    let phones = batch_request.phones.clone();
+    
+    // 创建查询结果的 Future 流（带索引以确保明确映射）
+    let results_stream = stream::iter(phones.into_iter().enumerate()).map(|(index, phone)| {
+        let phone_data = phone_data.clone();
+        async move {
+            let phone_clone = phone.clone();
+            match phone_data.find(&phone) {
+                Ok(info) => PhoneQueryResult {
+                    phone: phone_clone,
+                    index,
+                    success: true,
+                    data: Some(info),
+                    error: None,
+                },
+                Err(phone_lookup_rs::ErrorKind::NotFound) => PhoneQueryResult {
+                    phone: phone_clone,
+                    index,
+                    success: false,
+                    data: None,
+                    error: Some("手机号码未找到".to_string()),
+                },
+                Err(phone_lookup_rs::ErrorKind::InvalidLength) => PhoneQueryResult {
+                    phone: phone_clone,
+                    index,
+                    success: false,
+                    data: None,
+                    error: Some("手机号码格式无效".to_string()),
+                },
+                Err(phone_lookup_rs::ErrorKind::InvalidPhoneDatabase) => PhoneQueryResult {
+                    phone: phone_clone,
+                    index,
+                    success: false,
+                    data: None,
+                    error: Some("数据库格式错误".to_string()),
+                },
+                Err(_) => PhoneQueryResult {
+                    phone: phone_clone,
+                    index,
+                    success: false,
+                    data: None,
+                    error: Some("查询失败".to_string()),
+                }
+            }
+        }
+    });
+    
+    // 并发执行查询并收集结果（保持原始顺序）
+    let results: Vec<PhoneQueryResult> = results_stream.buffered(100).collect().await;
+    
+    // 统计查询结果
+    let total = results.len();
+    let success_count = results.iter().filter(|r| r.success).count();
+    let failed_count = total - success_count;
+    let processing_time = start_time.elapsed().as_millis() as u64;
+    
+    let stats = BatchQueryStats {
+        total,
+        success_count,
+        failed_count,
+        processing_time_ms: processing_time,
+    };
+    
+    let batch_response = BatchQueryResponse {
+        results,
+        stats,
+    };
+    
+    tracing::info!(
+        "批量查询完成: 总数={}, 成功={}, 失败={}, 耗时={}ms",
+        total, success_count, failed_count, processing_time
+    );
+    
+    HttpResponse::Ok().json(ApiResponse::success(batch_response))
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // 加载配置
@@ -255,6 +411,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .service(query_phone)
             .service(query_phone_by_path)
+            .service(batch_query)
             .service(health_check)
             .service(demo_endpoint)
             .service(echo)
