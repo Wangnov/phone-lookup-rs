@@ -1,23 +1,23 @@
 //! # Phone Lookup RS
-//! 
+//!
 //! 高性能的手机号归属地查询库，支持快速二分查找和缓存机制。
-//! 
+//!
 //! ## 特性
-//! 
+//!
 //! - 基于二分查找的高性能查询算法
 //! - 内置LRU缓存机制，可配置缓存大小
 //! - 线程安全的并发访问支持
 //! - 内存优化的数据结构设计
-//! 
+//!
 //! ## 示例
-//! 
+//!
 //! ```rust
 //! use phone_lookup_rs::PhoneData;
-//! 
+//!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let phone_data = PhoneData::new()?;
 //! let info = phone_data.find("13800138000")?;
-//! println!("省份: {}, 城市: {}, 运营商: {}", 
+//! println!("省份: {}, 城市: {}, 运营商: {}",
 //!          info.province, info.city, info.card_type);
 //! # Ok(())
 //! # }
@@ -26,9 +26,9 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::sync::RwLock;
-use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde::Serialize;
 use thiserror::Error;
@@ -56,9 +56,9 @@ pub enum ErrorKind {
 }
 
 /// 手机号数据库核心结构
-/// 
+///
 /// 包含手机号归属地数据库的所有信息，支持高性能查询和缓存机制。
-/// 
+///
 /// # 特性
 /// - 线程安全：使用 Arc 和 Mutex 确保并发访问安全
 /// - 内存优化：使用 Arc 避免数据重复拷贝
@@ -271,7 +271,7 @@ impl PhoneData {
     pub fn find(&self, no: &str) -> Fallible<PhoneNoInfo> {
         // 增加查询计数
         self.query_count.fetch_add(1, Ordering::Relaxed);
-        
+
         let len = no.len();
         if !(7..=11).contains(&len) {
             return Err(ErrorKind::InvalidLength);
@@ -309,14 +309,20 @@ impl PhoneData {
                     card_type: card_type.get_description(),
                 };
 
-                // 缓存结果（仅当缓存启用且限制缓存大小避免内存泄漏）使用写锁
+                // 缓存结果（优化锁粒度：最小化写锁持有时间）
                 if self.cache_enabled {
+                    // 首先用读锁快速检查缓存大小，避免不必要的写锁获取
+                    let needs_cleanup = if let Ok(cache) = self.cache.read() {
+                        cache.len() >= self.cache_max_size
+                    } else {
+                        false
+                    };
+                    
                     if let Ok(mut cache) = self.cache.write() {
-                        if cache.len() < self.cache_max_size {
-                            cache.insert(no.to_string(), result.clone());
-                        } else {
-                            // 简单的LRU策略：当缓存满时，清除一半的条目
-                            if cache.len() >= self.cache_max_size {
+                        // 双重检查：可能在获取写锁期间其他线程已更新缓存
+                        if !cache.contains_key(no) {
+                            if needs_cleanup && cache.len() >= self.cache_max_size {
+                                // 优化的LRU清理：收集一半的keys后立即释放迭代器
                                 let keys_to_remove: Vec<String> = cache
                                     .keys()
                                     .take(cache.len() / 2)
@@ -325,9 +331,9 @@ impl PhoneData {
                                 for key in keys_to_remove {
                                     cache.remove(&key);
                                 }
-                                cache.insert(no.to_string(), result.clone());
                                 tracing::debug!("缓存已满，清理后插入新条目");
                             }
+                            cache.insert(no.to_string(), result.clone());
                         }
                     }
                 }
@@ -464,7 +470,7 @@ mod tests {
         assert_eq!(CardType::from_u8(1).unwrap(), CardType::Cmcc);
         assert_eq!(CardType::from_u8(2).unwrap(), CardType::Cucc);
         assert_eq!(CardType::from_u8(3).unwrap(), CardType::Ctcc);
-        
+
         assert!(matches!(CardType::from_u8(99), Err(ErrorKind::InvalidOpNo)));
     }
 
@@ -477,9 +483,17 @@ mod tests {
 
     #[test]
     fn test_index_ordering() {
-        let index1 = Index { phone_no_prefix: 1380000, records_offset: 100, card_type: 1 };
-        let index2 = Index { phone_no_prefix: 1390000, records_offset: 200, card_type: 2 };
-        
+        let index1 = Index {
+            phone_no_prefix: 1380000,
+            records_offset: 100,
+            card_type: 1,
+        };
+        let index2 = Index {
+            phone_no_prefix: 1390000,
+            records_offset: 200,
+            card_type: 2,
+        };
+
         assert!(index1 < index2);
         assert_eq!(index1.cmp(&index2), std::cmp::Ordering::Less);
     }
@@ -502,7 +516,7 @@ mod tests {
     fn test_cache_functionality() {
         let phone_data = create_mock_phone_data();
         let phone_number = "1380013";
-        
+
         // 创建模拟结果
         let mock_result = PhoneNoInfo {
             province: "测试省".to_string(),
