@@ -51,8 +51,9 @@ criterion/
 # Documentation build
 /docs/book/
 
-# AI assistant files
+# AI assistant files - allow SubAgent definitions
 .claude/
+!.claude/agents/
 CLAUDE.md
 
 # Local configuration overrides
