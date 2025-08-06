@@ -30,10 +30,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::sync::RwLock;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub mod config;
+pub mod tauri_commands;
 
 /// 手机号查询相关错误类型
 #[derive(Error, Debug)]
@@ -165,7 +166,9 @@ impl PhoneData {
     }
 
     pub fn new() -> Fallible<PhoneData> {
-        Self::from_file("phone.dat")
+        let path = get_resource_path("phone.dat");
+        tracing::info!("尝试加载数据库文件: {}", path);
+        Self::from_file(&path)
     }
 
     pub fn from_file(path: &str) -> Fallible<PhoneData> {
@@ -306,7 +309,7 @@ impl PhoneData {
                     city: record.city,
                     zip_code: record.zip_code,
                     area_code: record.area_code,
-                    card_type: card_type.get_description(),
+                    card_type: card_type.get_description().to_string(),
                 };
 
                 // 缓存结果（优化锁粒度：最小化写锁持有时间）
@@ -317,17 +320,14 @@ impl PhoneData {
                     } else {
                         false
                     };
-                    
+
                     if let Ok(mut cache) = self.cache.write() {
                         // 双重检查：可能在获取写锁期间其他线程已更新缓存
                         if !cache.contains_key(no) {
                             if needs_cleanup && cache.len() >= self.cache_max_size {
                                 // 优化的LRU清理：收集一半的keys后立即释放迭代器
-                                let keys_to_remove: Vec<String> = cache
-                                    .keys()
-                                    .take(cache.len() / 2)
-                                    .cloned()
-                                    .collect();
+                                let keys_to_remove: Vec<String> =
+                                    cache.keys().take(cache.len() / 2).cloned().collect();
                                 for key in keys_to_remove {
                                     cache.remove(&key);
                                 }
@@ -361,6 +361,66 @@ impl PhoneData {
         }
         Ok(result)
     }
+
+    /// 获取总记录数（用于Tauri命令）
+    pub fn get_total_records(&self) -> usize {
+        self.index.len()
+    }
+
+    /// 获取缓存统计信息
+    pub fn get_cache_stats(&self) -> CacheStats {
+        let cache = self.cache.read().unwrap();
+        CacheStats {
+            size: cache.len(),
+            max_size: self.cache_max_size,
+            hits: self.cache_hits(),
+            total_queries: self.query_count(),
+        }
+    }
+
+    /// 清空缓存
+    pub fn clear_cache(&self) -> Result<(), ErrorKind> {
+        if !self.cache_enabled {
+            return Err(ErrorKind::InvalidPhoneDatabase);
+        }
+
+        let mut cache = self
+            .cache
+            .write()
+            .map_err(|_| ErrorKind::InvalidPhoneDatabase)?;
+        cache.clear();
+        Ok(())
+    }
+
+    /// 设置缓存大小
+    pub fn set_cache_size(&self, _new_size: usize) -> Result<(), ErrorKind> {
+        if !self.cache_enabled {
+            return Err(ErrorKind::InvalidPhoneDatabase);
+        }
+
+        // 注意：这里只是展示接口，实际实现可能需要重构缓存结构
+        // 当前实现只是清空缓存
+        let mut cache = self
+            .cache
+            .write()
+            .map_err(|_| ErrorKind::InvalidPhoneDatabase)?;
+        cache.clear();
+        // TODO: 实际应用中可能需要调整PhoneData结构来支持动态缓存大小调整
+        Ok(())
+    }
+}
+
+/// 缓存统计信息结构
+#[derive(Debug, Clone)]
+pub struct CacheStats {
+    /// 当前缓存条目数
+    pub size: usize,
+    /// 最大缓存条目数
+    pub max_size: usize,
+    /// 缓存命中次数
+    pub hits: u64,
+    /// 总查询次数
+    pub total_queries: u64,
 }
 
 /// 运营商类型，使用更紧凑的表示
@@ -408,7 +468,7 @@ impl CardType {
     }
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PhoneNoInfo {
     /// 省
     pub province: String,
@@ -419,7 +479,34 @@ pub struct PhoneNoInfo {
     /// 长途区号
     pub area_code: String,
     /// 卡类型
-    pub card_type: &'static str,
+    pub card_type: String,
+}
+
+/// 获取资源文件路径
+///
+/// 在 Tauri 应用中，资源文件的位置在开发和生产环境中可能不同。
+/// 此函数尝试多种路径来定位资源文件。
+fn get_resource_path(filename: &str) -> String {
+    // 尝试多种可能的路径
+    let possible_paths = vec![
+        // 1. 当前工作目录（开发环境）
+        format!("./{}", filename),
+        // 2. 项目根目录（相对于 src-tauri）
+        format!("../{}", filename),
+        // 3. 绝对路径（如果环境变量设置）
+        std::env::var("PHONE_DATA_PATH").unwrap_or_default(),
+    ];
+
+    for path in possible_paths {
+        if !path.is_empty() && std::path::Path::new(&path).exists() {
+            tracing::info!("找到资源文件: {}", path);
+            return path;
+        }
+    }
+
+    // 如果都找不到，返回默认路径（用于错误信息）
+    tracing::warn!("未找到资源文件: {}，将使用默认路径", filename);
+    format!("./{}", filename)
 }
 
 /// 统一的结果类型别名
@@ -523,7 +610,7 @@ mod tests {
             city: "测试市".to_string(),
             zip_code: "000000".to_string(),
             area_code: "0000".to_string(),
-            card_type: "测试运营商",
+            card_type: "测试运营商".to_string(),
         };
 
         // 直接向缓存中插入测试数据
