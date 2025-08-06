@@ -23,6 +23,14 @@ tokio = { version = "1.46.1", features = ["full"] }
 futures = "0.3"
 config = "0.14"
 toml = "0.8"
+# Tauri 相关依赖 (可选)
+tauri = { version = "2.7.0", optional = true }
+log = { version = "0.4", optional = true }
+
+[features]
+default = []
+# Tauri桌面应用特性
+tauri-app = ["tauri", "log"]
 
 [profile.release]
 opt-level = 3
