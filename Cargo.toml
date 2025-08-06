@@ -1,6 +1,6 @@
 [package]
 name = "phone-lookup-rs"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Wangnov <wangnov69@gmail.com>"]
 edition = "2021"
 description = "High-performance phone number lookup service with optimized binary search and caching"
